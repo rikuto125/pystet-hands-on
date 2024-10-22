@@ -1,7 +1,9 @@
 name: Python Test
-
-on: [push]
-
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
 jobs:
   test:
     runs-on: ubuntu-latest
@@ -17,8 +19,22 @@ jobs:
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
-        pip install pytest
+        pip install -r requirements.txt
         
-    - name: Run tests
+    - name: Run tests with pytest
+      env:
+        PYTHONPATH: ${{ github.workspace }}
       run: |
-        pytest tests/
+        pip install pytest pytest-cov
+        pytest tests/ --cov=src/ --cov-report=term-missing -v > pytest-results.txt
+        
+    - name: Upload test results
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: pytest-results
+        path: pytest-results.txt
+        
+    - name: Display test results
+      if: always()
+      run: cat pytest-results.txt
